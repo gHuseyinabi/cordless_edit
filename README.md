@@ -1,4 +1,4 @@
-<h1 align="center">Cordless</h1>
+<h1 align="center">Cordless Specialized Edition</h1>
 
 <p align="center">
   <a href="https://circleci.com/gh/Bios-Marcel/cordless">
