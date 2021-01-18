@@ -720,7 +720,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			messageBefore := window.messageInput.GetText()
 			messageToSend := ""
 			if strings.HasPrefix(strings.ToLower(messageBefore), "/enc ") {
-				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), "golang_malclub_encryption_key111"))
+				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]),window.session.State.User.ID))
 			} else {
 				messageToSend = messageBefore
 			}
@@ -1619,8 +1619,9 @@ func proceedMesages(window *Window,message *discordgo.Message) {
 	messageChannel,_ := window.session.State.Channel(message.ChannelID)
 	
 	if strings.HasPrefix(message.Content, "ENC") {
+		
 		message.Content = string(
-			util.Decrypt(util.DecryptBase64(message.Content[3:]), "golang_malclub_encryption_key111"))
+			util.Decrypt(util.DecryptBase64(message.Content[3:]),message.Author.ID))
 	}
 	if message.Content == "??avatar" {
 		eski := window.messageInput.GetText()
