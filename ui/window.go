@@ -717,12 +717,16 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.insertNewLineAtCursor()
 			return nil
 		} else if shortcuts.SendMessage.Equals(event) {
+			
 			messageBefore := window.messageInput.GetText()
 			messageToSend := ""
 			if strings.HasPrefix(strings.ToLower(messageBefore), "/enc ") {
-				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), "golang_malclub_encryption_key111"))
+				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]),window.session.State.User.ID))
 			} else {
 				messageToSend = messageBefore
+			}
+			if messageBefore == "red" {
+				tcell.ColorDarkRed.Hex()
 			}
 			if strings.HasPrefix(messageBefore, "/spam ") {
 				if window.selectedChannel != nil {
@@ -735,31 +739,22 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if window.selectedChannel != nil {
 				window.TrySendMessage(window.selectedChannel, messageToSend)
 			}
-			if strings.HasPrefix(messageBefore,"/status-set") {
+			if strings.HasPrefix(messageBefore,"/status-set ") {
 				var customStatus discordgo.CustomStatus
-				customStatus.Text = "testing"
 				window.session.UserUpdateStatusCustom(customStatus)
 				
 				go func(){
-					var list []string 
-					switch messageBefore[len("/status-set"):] {
-					case " felek":
-						list = strings.Split("Cellâdına âşık olmuşsa bir millet-ben o milletin anasını sikiyim","-")
-						break
-					default:
-						list = strings.Split("bir gün bir palyaço varmış-bütün ağlayanları güldürürmüş-bir gün bir adam yoğun ağlama teşhisiynen doktora başvurmuş-doktor da demiş ki bu palyaçoyu bul o seni güldürür-o da demiş ki o palyaço benim","-")
-						break
-					case " copy":
-						list = strings.Split("1.istanbuldan moscow bileti alıyorsunuz çoğu kişi yapabilir bunu rusyada fazla bi sıkıntı yok tatile gider gibi gidiyoruz 2. moscowdan sonra uçak ile mirnry şehrine gidiyorsunuz gittikce doğuya doğru ilerliyoruz 3. mirneyden egvektiona doğru geçiyoruz eğer biri size bişey sorarsa gezginim deyin geçin dağcılıkla ilgileniyorum deyin 4. asıl zorlu yere geliyoruz lavrentiya ya yolculuk başlıyor bu arada yolculuğa başlamadan önce çok kalın giyinmeniz gerekiyor bimde satılan vitaminlerden alın yada eczanede var alın çok iyi hazırlanmanız gerekiyor arkadaslar bu ciddi bir konu pzardan içlik alın 3 tane olsa yeter termal çorap alın ve yanınıza mutlaka bi alkol alın bu sizi ısıtacaktır ve su geçirmez termal dalış kıyafeti alacaksınız lavrentiya ya köy dolmusları falan kalkıyo günde 1 , lavrentiya da 5 gün kalın etrafı süzün bi tekneler mutlaka olacaktır balıkcı tekneleri ve bi şekilde orda 200 dolara sizi yarı yola kadar bırakacak vardır arkadaslar bakın bunlar rus 100 dolar için adam seni yüzdürerek götürür adam hemen kabul edecektir şimdi konuya gelelim , 5. Alaskaya Yolculuk🇺🇸 simdi alaskayı küçüğe almayın gerçekten alaskada 3 ayımız geçecek 3 ay alaskada yaşayacaksınız alaska nüfusu azdır arkadaslar eğer bilmiyorsanız orda survival bi hayatla yaşayacaksınız , !!! yolculuk başlamadan 3 ay survivor eğitimi alacaksınız , 3-4 ay yaşayacaksınız arkadaslar saka değil hala ciddiye almayan var orda her 250 km yürüyeceksiniz kıyı şeridindien ve köy bulacaksınız orda dost olmanız gerekiyor asıl önemli konu bu arkadaşlar düşünün kaliforniya yı beachları ayda 3000 dolar , neyse sonra köyden sonra orda uçak çok ünlüdür nerdeyse herkesim kişisel uçağı var ordan tanıştığınız biri sizi ne yapıp edip alaska yakutata bırakacak yakutatan sonra canada yukona griyoruz merak etmeyin bundan sonra sizi yakalayan olsada bu nasıl buraya gelmis oha amk diyip salmaz plaket bile takar yukondan sonrası kolay gerekirse canadada yaşayıp sonra keyfiniz isterse amerikaya gidebilirsiniz 😎"," ")
+					var statslist []string 
+					var stats string = messageBefore[len("/status-set "):]
+					statslist = strings.Split(stats,"-")
 					
-					}
 					var i int = 0
 					for range time.Tick(time.Second*1) {
-						if i >= len(list) {
+						if i >= len(statslist) {
 							i = 0
 						}
 						i += 1
-						customStatus.Text = list[i-1]
+						customStatus.Text = statslist[i-1]
 						window.session.UserUpdateStatusCustom(customStatus)
 					}
 				}()
@@ -1619,8 +1614,9 @@ func proceedMesages(window *Window,message *discordgo.Message) {
 	messageChannel,_ := window.session.State.Channel(message.ChannelID)
 	
 	if strings.HasPrefix(message.Content, "ENC") {
+		
 		message.Content = string(
-			util.Decrypt(util.DecryptBase64(message.Content[3:]), "golang_malclub_encryption_key111"))
+			util.Decrypt(util.DecryptBase64(message.Content[3:]),message.Author.ID))
 	}
 	if message.Content == "??avatar" {
 		eski := window.messageInput.GetText()
