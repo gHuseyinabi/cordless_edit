@@ -723,7 +723,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if strings.HasPrefix(strings.ToLower(messageBefore), "/enc ") {
 				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), "golang_malclub_encryption_key111"))
 			} else if strings.HasPrefix(strings.ToLower(messageBefore), "/advenc ") {
-				messageToSend = "ADVENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), window.session.State.User.ID))
+				messageToSend = "ADVENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/advenc "):]), window.session.State.User.ID))
 			} else {
 				messageToSend = messageBefore
 			}
@@ -1611,12 +1611,12 @@ func proceedMesages(window *Window, message *discordgo.Message) {
 	cont := message.Content
 
 	if strings.HasPrefix(cont, "ENC") {
-		message.Content = string(
-			util.Decrypt(util.DecryptBase64(cont[3:]), "golang_malclub_encryption_key111"))
+		message.Content = util.ColorBlue + string(
+			util.Decrypt(util.DecryptBase64(cont[3:]), "golang_malclub_encryption_key111")) + util.ColorRed + "(Şifrelendi)"
 	} //old-version
 	if strings.HasPrefix(cont, "ADVENC") {
-		message.Content = string(
-			util.Decrypt(util.DecryptBase64(cont[6:]), message.Author.ID))
+		message.Content = util.ColorGreen + string(
+			util.Decrypt(util.DecryptBase64(cont[6:]), message.Author.ID)) + util.ColorRed + "(Şifrelendi)"
 	} //user-specialized
 }
 
