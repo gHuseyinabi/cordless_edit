@@ -10,7 +10,6 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/times"
-	"github.com/Bios-Marcel/cordless/util"
 	"github.com/Bios-Marcel/cordless/util/files"
 )
 
@@ -116,13 +115,6 @@ func (l *MessageLoader) LoadMessages(channel *discordgo.Channel) ([]*discordgo.M
 			//updates events, meaning those have to be newer than the
 			//requested ones.
 			channel.Messages = append(messages, channel.Messages...)
-		}
-		for index, _ := range channel.Messages {
-			cont := channel.Messages[index].Content
-			if strings.HasPrefix(cont, "ENC") {
-				channel.Messages[index].Content = string(
-					util.Decrypt(util.DecryptBase64(cont[3:]), "golang_malclub_encryption_key111"))
-			}
 		}
 	}
 

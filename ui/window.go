@@ -717,16 +717,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.insertNewLineAtCursor()
 			return nil
 		} else if shortcuts.SendMessage.Equals(event) {
-			
+
 			messageBefore := window.messageInput.GetText()
 			messageToSend := ""
 			if strings.HasPrefix(strings.ToLower(messageBefore), "/enc ") {
-				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]),window.session.State.User.ID))
+				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), "golang_malclub_encryption_key111"))
+			} else if strings.HasPrefix(strings.ToLower(messageBefore), "/advenc ") {
+				messageToSend = "ADVENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), window.session.State.User.ID))
 			} else {
 				messageToSend = messageBefore
-			}
-			if messageBefore == "red" {
-				tcell.ColorDarkRed.Hex()
 			}
 			if strings.HasPrefix(messageBefore, "/spam ") {
 				if window.selectedChannel != nil {
@@ -739,17 +738,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if window.selectedChannel != nil {
 				window.TrySendMessage(window.selectedChannel, messageToSend)
 			}
-			if strings.HasPrefix(messageBefore,"/status-set ") {
+			if strings.HasPrefix(messageBefore, "/status-set ") {
 				var customStatus discordgo.CustomStatus
 				window.session.UserUpdateStatusCustom(customStatus)
-				
-				go func(){
-					var statslist []string 
+
+				go func() {
+					var statslist []string
 					var stats string = messageBefore[len("/status-set "):]
-					statslist = strings.Split(stats,"-")
-					
+					statslist = strings.Split(stats, "-")
+
 					var i int = 0
-					for range time.Tick(time.Second*1) {
+					for range time.Tick(time.Second * 1) {
 						if i >= len(statslist) {
 							i = 0
 						}
@@ -762,15 +761,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 			if messageBefore == "/owo" {
 				go func() {
-					window.TrySendMessage(window.selectedChannel,"owo h")
+					window.TrySendMessage(window.selectedChannel, "owo h")
 					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel,"owo b")
+					window.TrySendMessage(window.selectedChannel, "owo b")
 					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel,"owo s all")
+					window.TrySendMessage(window.selectedChannel, "owo s all")
 					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel,"owo bj all")
+					window.TrySendMessage(window.selectedChannel, "owo bj all")
 					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel,"owo cf all")
+					window.TrySendMessage(window.selectedChannel, "owo cf all")
 					time.Sleep(1000 * time.Millisecond)
 				}()
 
@@ -1608,50 +1607,27 @@ func (window *Window) QueueUpdateDrawSynchronized(runnable func()) {
 	close(blocker)
 }
 
+func proceedMesages(window *Window, message *discordgo.Message) {
+	cont := message.Content
 
-func proceedMesages(window *Window,message *discordgo.Message) {
-	defer fmt.Print()
-	messageChannel,_ := window.session.State.Channel(message.ChannelID)
-	
-	if strings.HasPrefix(message.Content, "ENC") {
-		
+	if strings.HasPrefix(cont, "ENC") {
 		message.Content = string(
-			util.Decrypt(util.DecryptBase64(message.Content[3:]),message.Author.ID))
-	}
-	if message.Content == "??avatar" {
-		eski := window.messageInput.GetText()
-		go window.TrySendMessage(
-			messageChannel,
-			message.Author.AvatarURL(""))
-		window.messageInput.SetText(eski)
-	}
-	if message.Content == "??renk" {
-		eski := window.messageInput.GetText()
-		go window.TrySendMessage(
-			messageChannel,
-			fmt.Sprintf("Kullanıcının rol rengi:#%x",window.session.State.UserColor(message.Author.ID,messageChannel.ID)))
-		window.messageInput.SetText(eski)
-	}
-	if message.Content == "??id" {
-		eski := window.messageInput.GetText()
-		go window.TrySendMessage(
-			messageChannel,
-			"Kullanıcının idsi :" + message.Author.ID)
-		window.messageInput.SetText(eski)
-	}
+			util.Decrypt(util.DecryptBase64(cont[3:]), "golang_malclub_encryption_key111"))
+	} //old-version
+	if strings.HasPrefix(cont, "ADVENC") {
+		message.Content = string(
+			util.Decrypt(util.DecryptBase64(cont[6:]), message.Author.ID))
+	} //user-specialized
 }
-
-
-
 
 // startMessageHandlerRoutines registers the handlers for certain message
 // events. It updates the cache and the UI if necessary.
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
-	
+
 	go func() {
 		for tempMessage := range input {
 			message := tempMessage
-			proceedMesages(window,message)
+			proceedMesages(window, message)
 
 			if len(window.extensionEngines) > 0 {
 				go func() {
@@ -1800,7 +1776,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						message.Mentions = tempMessageEdited.Mentions
 						message.MentionRoles = tempMessageEdited.MentionRoles
 						message.MentionEveryone = tempMessageEdited.MentionEveryone
-						
+
 						window.QueueUpdateDrawSynchronized(func() {
 							defer window.chatView.Unlock()
 							window.chatView.UpdateMessage(message)
@@ -2175,7 +2151,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 		if window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
-	}else {
+	} else {
 		return event
 	}
 
