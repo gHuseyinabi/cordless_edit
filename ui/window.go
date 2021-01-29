@@ -1611,12 +1611,12 @@ func proceedMesages(window *Window, message *discordgo.Message) {
 	cont := message.Content
 
 	if strings.HasPrefix(cont, "ENC") {
-		message.Content = util.ColorBlue + string(
+		message.Content = string(
 			util.Decrypt(util.DecryptBase64(cont[3:]), "golang_malclub_encryption_key111")) + util.ColorRed + "(Şifrelendi)"
 	} //old-version
 	if strings.HasPrefix(cont, "ADVENC") {
-		message.Content = util.ColorGreen + string(
-			util.Decrypt(util.DecryptBase64(cont[6:]), message.Author.ID)) + util.ColorRed + "(Şifrelendi)"
+		message.Content = string(
+			util.Decrypt(util.DecryptBase64(cont[6:]), message.Author.ID)) + "(Şifrelendi)"
 	} //user-specialized
 }
 
