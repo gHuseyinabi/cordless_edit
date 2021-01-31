@@ -723,7 +723,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			additional := map[string]string{"userid": window.session.State.User.ID}
 			messageToSend = util.OnMessageSend(messageBefore, additional, window.session)
 			if messageToSend == "nil" {
-				window.messageInput.SetText("")
 				messageToSend = messageBefore
 			} else if messageToSend == "no_send_message" {
 				window.messageInput.SetText("")
