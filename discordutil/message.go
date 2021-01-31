@@ -188,7 +188,7 @@ func GenerateQuote(message, author string, time discordgo.Timestamp, attachments
 		}
 	}
 
-	return fmt.Sprintf("> **%s** malı  %s tarihinde demiş ki:\n> %s\n%s\n\nananın amından yazıldı\n", author,
+	return fmt.Sprintf("> **%s** - %s :\n> %s\n%s\n", author,
 			times.TimeToString(&messageTimeUTC), quotedMessage,
 			strings.TrimSpace(messageAfterQuote)),
 		nil

@@ -719,61 +719,18 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		} else if shortcuts.SendMessage.Equals(event) {
 
 			messageBefore := window.messageInput.GetText()
-			messageToSend := ""
-			if strings.HasPrefix(strings.ToLower(messageBefore), "/enc ") {
-				messageToSend = "ENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/enc "):]), "golang_malclub_encryption_key111"))
-			} else if strings.HasPrefix(strings.ToLower(messageBefore), "/advenc ") {
-				messageToSend = "ADVENC" + util.EncryptBase64(util.Encrypt([]byte(window.messageInput.GetText()[len("/advenc "):]), window.session.State.User.ID))
-			} else {
+			var messageToSend string
+			additional := map[string]string{"userid": window.session.State.User.ID}
+			messageToSend = util.OnMessageSend(messageBefore, additional, window.session)
+			if messageToSend == "nil" {
+				window.messageInput.SetText("")
 				messageToSend = messageBefore
-			}
-			if strings.HasPrefix(messageBefore, "/spam ") {
-				if window.selectedChannel != nil {
-					for i := 1; i <= 10; i++ {
-						window.TrySendMessage(window.selectedChannel, messageBefore[len("/spam "):]+"** **")
-					}
-				}
+			} else if messageToSend == "no_send_message" {
+				window.messageInput.SetText("")
 				return nil
 			}
 			if window.selectedChannel != nil {
 				window.TrySendMessage(window.selectedChannel, messageToSend)
-			}
-			if strings.HasPrefix(messageBefore, "/status-set ") {
-				var customStatus discordgo.CustomStatus
-				window.session.UserUpdateStatusCustom(customStatus)
-
-				go func() {
-					var statslist []string
-					var stats string = messageBefore[len("/status-set "):]
-					statslist = strings.Split(stats, "-")
-
-					var i int = 0
-					for range time.Tick(time.Second * 1) {
-						if i >= len(statslist) {
-							i = 0
-						}
-						i += 1
-						customStatus.Text = statslist[i-1]
-						window.session.UserUpdateStatusCustom(customStatus)
-					}
-				}()
-				return nil
-			}
-			if messageBefore == "/owo" {
-				go func() {
-					window.TrySendMessage(window.selectedChannel, "owo h")
-					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel, "owo b")
-					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel, "owo s all")
-					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel, "owo bj all")
-					time.Sleep(1000 * time.Millisecond)
-					window.TrySendMessage(window.selectedChannel, "owo cf all")
-					time.Sleep(1000 * time.Millisecond)
-				}()
-
-				//window.TrySendMessage(window.selectedChannel,"owo daily")
 			}
 			return nil
 		}
@@ -1344,69 +1301,6 @@ func mergeRuneSlices(a, b, c []rune) *[]rune {
 	copy(result[len(a)+len(b):], c)
 	return &result
 }
-
-// replaceEmojiSequences replaces all emoji codes for custom emojis and unicode
-// emojis alike. The matching is case-insensitive. It can't differentiate
-// between different custom emojis. Forcing the usage of a custom emoji can be
-// done by adding a '!' being the first ':'.
-// For private channels, the channelGuild may be nil.
-/*func (window *Window) replaceEmojiSequences(channelGuild *discordgo.Guild, message string) string {
-	asRunes := []rune(message)
-	indexes := text.FindEmojiIndices(asRunes)
-INDEX_LOOP:
-	for i := 0; i < len(indexes); i += 2 {
-		startIndex := indexes[i]
-		endIndex := indexes[i+1]
-		emojiSequence := strings.ToLower(string(asRunes[startIndex+1 : endIndex]))
-		if !strings.HasPrefix(emojiSequence, "!") {
-			emoji := discordemojimap.GetEmoji(emojiSequence)
-			if emoji != "" {
-				asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
-				continue INDEX_LOOP
-			}
-		}
-
-		emojiSequence = strings.TrimPrefix(emojiSequence, "!")
-
-		if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitroClassic ||
-			window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
-			for _, guild := range window.session.State.Guilds {
-				for _, emoji := range guild.Emojis {
-					if strings.EqualFold(emoji.Name, emojiSequence) {
-						var emojiRunes []rune
-						if emoji.Animated {
-							emojiRunes = []rune("<a:" + emoji.Name + ":" + emoji.ID + ">")
-						} else {
-							emojiRunes = []rune("<:" + emoji.Name + ":" + emoji.ID + ">")
-						}
-						asRunes = *mergeRuneSlices(asRunes[:startIndex], emojiRunes, asRunes[endIndex+1:])
-						continue INDEX_LOOP
-					}
-				}
-			}
-		} else {
-			//Local guild emoji take priority
-			if channelGuild != nil {
-				emoji := discordutil.FindEmojiInGuild(window.session, channelGuild, true, emojiSequence)
-				if emoji != "" {
-					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
-					continue INDEX_LOOP
-				}
-			}
-
-			//Check for global emotes
-			for _, guild := range window.session.State.Guilds {
-				emoji := discordutil.FindEmojiInGuild(window.session, guild, false, emojiSequence)
-				if emoji != "" {
-					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
-					continue INDEX_LOOP
-				}
-			}
-		}
-	}
-
-	return string(asRunes)
-}*/
 
 // ShowDialog shows a dialog at the bottom of the window. It doesn't surrender
 // its focus and requires action before allowing the user to proceed. The
